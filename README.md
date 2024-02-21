@@ -1,0 +1,2 @@
+# Project description
+This Spring Boot application serves as an API for managing courses and user preferences. It provides endpoints for user registration, course management, and interaction with favorite courses. The application ensures secure authentication using Spring Security and manages user roles and permissions. It utilizes Spring Data JPA for interacting with the database and implements associations using advanced mapping techniques to establish relationships between entities.
