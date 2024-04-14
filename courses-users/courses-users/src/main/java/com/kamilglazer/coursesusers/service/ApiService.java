@@ -9,8 +9,6 @@ import com.kamilglazer.coursesusers.model.UserRole;
 import com.kamilglazer.coursesusers.repository.CourseRepository;
 import com.kamilglazer.coursesusers.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,10 +25,10 @@ public class ApiService {
     private final CourseRepository courseRepository;
 
     @Transactional
-    public ResponseEntity<String> save(UserRequest userRequest) {
+    public String save(UserRequest userRequest) {
 
         if(userRepository.existsByUsername(userRequest.getUsername())){
-            return new ResponseEntity<>("Registration failed: Username already exists.",HttpStatus.BAD_REQUEST);
+            throw new RuntimeException("User with this username already exists!");
         }
 
         UserEntity user = UserEntity.builder()
@@ -46,7 +44,7 @@ public class ApiService {
         user.setUserRole(userRole);
 
         userRepository.save(user);
-        return new ResponseEntity<>("Registration successful.",HttpStatus.OK);
+        return "Registration successful.";
     }
 
     public List<CourseRequest> getAllCourses() {
@@ -57,7 +55,6 @@ public class ApiService {
     public List<CourseRequest> getFavorites(UserDetails userDetails) {
         String username = userDetails.getUsername();
         UserEntity user = userRepository.findByUsername(username);
-
         List<Course> courseList = user.getCourseList();
         return courseList.stream().map(this::mapToCourseRequest).toList();
     }
@@ -71,7 +68,7 @@ public class ApiService {
     }
 
     @Transactional
-    public ResponseEntity<String> courseToFavorites(Long id,UserDetails userDetails){
+    public String courseToFavorites(Long id,UserDetails userDetails){
 
         Optional<Course> optionalCourse = courseRepository.findById(id);
 
@@ -79,28 +76,33 @@ public class ApiService {
             String username = userDetails.getUsername();
             UserEntity user = userRepository.findByUsername(username);
             Course course = optionalCourse.get();
+
+            if(user.getCourseList().contains(course)){
+                throw new RuntimeException("This course is already in your favorites!");
+            }
+
             user.addCourse(course);
             userRepository.save(user);
-            return new ResponseEntity<>("Course successfully added to your favorites.",HttpStatus.OK);
+            return "Course successfully added to your favorites.";
         }else{
-            return new ResponseEntity<>("Failed to add course to favorites: Course not found.",HttpStatus.NOT_FOUND);
+            throw new RuntimeException("Failed to add course to favorites: Course not found.");
         }
     }
 
 
     @Transactional
-    public ResponseEntity<Course> addCourse(CourseRequest courseRequest) {
+    public CourseRequest addCourse(CourseRequest courseRequest) {
         Course course = Course.builder()
                 .title(courseRequest.getTitle())
                 .author(courseRequest.getAuthor())
                 .content(courseRequest.getContent())
                 .build();
         courseRepository.save(course);
-        return new ResponseEntity<>(course, HttpStatus.CREATED);
+        return courseRequest;
     }
 
     @Transactional
-    public ResponseEntity<Course> putCourse(Long id, CourseRequest courseRequest) {
+    public void putCourse(Long id, CourseRequest courseRequest) {
 
         Optional<Course> optionalCourse = courseRepository.findById(id);
 
@@ -110,14 +112,13 @@ public class ApiService {
             course.setContent(courseRequest.getContent());
             course.setTitle(courseRequest.getTitle());
             courseRepository.save(course);
-            return new ResponseEntity<>(course,HttpStatus.OK);
         }else{
-            return new ResponseEntity<>(null,HttpStatus.BAD_REQUEST);
+            throw new RuntimeException("Bad request!");
         }
     }
 
     @Transactional
-    public ResponseEntity<Course> patchCourse(Long id, CourseRequest courseRequest) {
+    public void patchCourse(Long id, CourseRequest courseRequest) {
 
         Optional<Course> optionalCourse = courseRepository.findById(id);
 
@@ -137,42 +138,42 @@ public class ApiService {
             }
 
             courseRepository.save(course);
-            return new ResponseEntity<>(course,HttpStatus.OK);
         }else{
-            return new ResponseEntity<>(null,HttpStatus.BAD_REQUEST);
+            throw new RuntimeException("Bad request!");
         }
     }
 
     @Transactional
-    public ResponseEntity<String> deleteCourse(Long id) {
+    public void deleteCourse(Long id) {
 
         Optional<Course> optionalCourse = courseRepository.findById(id);
 
         if(optionalCourse.isPresent()){
             courseRepository.delete(optionalCourse.get());
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }else{
-            return new ResponseEntity<>("Course not found.",HttpStatus.BAD_REQUEST);
+            throw new RuntimeException("Bad request! Course not found.");
         }
     }
 
     @Transactional
-    public ResponseEntity<String> courseFromFavorites(Long id, UserDetails userDetails) {
+    public String courseFromFavorites(Long id, UserDetails userDetails) {
+
         Optional<Course> optionalCourse = courseRepository.findById(id);
+
         if(optionalCourse.isPresent()){
             String username = userDetails.getUsername();
             UserEntity user = userRepository.findByUsername(username);
 
             if(!user.getCourseList().contains(optionalCourse.get())){
-                return new ResponseEntity<>("Bad request.",HttpStatus.BAD_REQUEST);
+                throw new RuntimeException("Bad request! Course not found in your favorites.");
             }
 
             user.removeCourseFromFavorites(optionalCourse.get());
             userRepository.save(user);
 
-            return new ResponseEntity<>("Course removed from favorites.", HttpStatus.OK);
+            return "Course successfully removed from favorites";
         }else{
-            return new ResponseEntity<>("Course not found.",HttpStatus.BAD_REQUEST);
+            throw new RuntimeException("Bad request! Course ID not found.");
         }
     }
 }
