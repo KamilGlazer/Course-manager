@@ -1,11 +1,14 @@
 package com.kamilglazer.coursesusers.service;
 
 
+import com.kamilglazer.coursesusers.dto.CommentRequest;
 import com.kamilglazer.coursesusers.dto.CourseRequest;
 import com.kamilglazer.coursesusers.dto.UserRequest;
+import com.kamilglazer.coursesusers.model.Comment;
 import com.kamilglazer.coursesusers.model.Course;
 import com.kamilglazer.coursesusers.model.UserEntity;
 import com.kamilglazer.coursesusers.model.UserRole;
+import com.kamilglazer.coursesusers.repository.CommentRepository;
 import com.kamilglazer.coursesusers.repository.CourseRepository;
 import com.kamilglazer.coursesusers.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ public class ApiService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CourseRepository courseRepository;
+    private final CommentRepository commentRepository;
 
     @Transactional
     public String save(UserRequest userRequest) {
@@ -159,7 +163,6 @@ public class ApiService {
     public String courseFromFavorites(Long id, UserDetails userDetails) {
 
         Optional<Course> optionalCourse = courseRepository.findById(id);
-
         if(optionalCourse.isPresent()){
             String username = userDetails.getUsername();
             UserEntity user = userRepository.findByUsername(username);
@@ -175,5 +178,31 @@ public class ApiService {
         }else{
             throw new RuntimeException("Bad request! Course ID not found.");
         }
+    }
+
+    @Transactional
+    public String addComment(Long id, CommentRequest commentRequest, UserDetails userDetails) {
+
+        Optional<Course> optionalCourse = courseRepository.findById(id);
+        if(optionalCourse.isEmpty()) {
+            throw new RuntimeException("Bad request! Course not found!");
+        }
+
+        UserEntity user = userRepository.findByUsername(userDetails.getUsername());
+
+        Comment comment = Comment.builder()
+                .content(commentRequest.getContent())
+                .user(user)
+                .course(optionalCourse.get())
+                .build();
+
+        optionalCourse.get().getComments().add(comment);
+        user.getComments().add(comment);
+
+        courseRepository.save(optionalCourse.get());
+        userRepository.save(user);
+        commentRepository.save(comment);
+
+        return comment.getContent();
     }
 }

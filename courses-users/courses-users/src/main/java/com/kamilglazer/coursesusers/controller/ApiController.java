@@ -1,5 +1,6 @@
 package com.kamilglazer.coursesusers.controller;
 
+import com.kamilglazer.coursesusers.dto.CommentRequest;
 import com.kamilglazer.coursesusers.dto.CourseRequest;
 import com.kamilglazer.coursesusers.dto.UserRequest;
 import com.kamilglazer.coursesusers.service.ApiService;
@@ -63,6 +64,11 @@ public class ApiController {
     public ResponseEntity<Void> deleteCourse(@PathVariable Long id){
         apiService.deleteCourse(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/comment/{articleId}")
+    public ResponseEntity<String> addComment(@PathVariable Long articleId, @RequestBody CommentRequest commentRequest, @AuthenticationPrincipal UserDetails userDetails){
+        return ResponseEntity.ok(apiService.addComment(articleId,commentRequest,userDetails));
     }
 
 }

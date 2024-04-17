@@ -41,6 +41,9 @@ public class UserEntity {
     )
     private List<Course> courseList;
 
+    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    private List<Comment> comments;
+
     public void addCourse(Course course){
         this.getCourseList().add(course);
     }

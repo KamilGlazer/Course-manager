@@ -32,4 +32,9 @@ public class Course {
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     private List<UserEntity> users;
+
+
+    @OneToMany(mappedBy = "course",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    private List<Comment> comments;
+
 }

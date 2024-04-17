@@ -54,6 +54,7 @@ public class SecurityConfig {
                                 .requestMatchers("/addCourse").hasRole("ADMIN")
                                 .requestMatchers("/course/**").hasRole("ADMIN")
                                 .requestMatchers("/deleteCourse/**").hasRole("ADMIN")
+                                .requestMatchers("/comment/**").hasAnyRole("USER","ADMIN")
                                 .requestMatchers("/register").permitAll())
                 .httpBasic(Customizer.withDefaults())
                 .csrf(csrf->csrf.disable());
